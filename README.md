@@ -31,9 +31,9 @@ easyvobus:
   default-suffix: _text # dict和enum 默认翻译后缀
   rpc: #rpc 注解的配置
     user-service:  #服务名
-#      url: [http://192.168.1.1:8081,http://192.168.1.2:8081]
+      #      url: [http://192.168.1.1:8081,http://192.168.1.2:8081]
       url: #服务地址
-        - http://192.168.1.1:8081  
+        - http://192.168.1.1:8081
         - http://192.168.1.2:8081
 ```
 ## 业务注解：
@@ -56,26 +56,26 @@ public class DefaultVoBusDbServiceImpl implements IEasyVoBusDbService {
 #### 作用：直接根据字段查询数据库表，自动填充关联字段
 ```java
 @BusDb(
-    table = "sys_user",               // 数据库表名
-    whereField = "user_id",                // 条件字段（外键）
-    selectField = {"username", "nick_name"}, // 查询字段
-    selectFieldAlias = {"userName", "realName"}, // 非必须 别名（与查询字段一一对应）
-    param = "del_flag = 0",            //非必须 SQL附加条件（逻辑删除等）
-	ruleField = "userType",     //非必须  配置了ruleValues，没有配置ruleField 默认当前字段 userId
-	ruleValues = 1              //非必须 当前对象userType=1执行
+        table = "sys_user",               // 数据库表名
+        whereField = "user_id",                // 条件字段（外键）
+        selectField = {"username", "nick_name"}, // 查询字段
+        selectFieldAlias = {"userName", "realName"}, // 非必须 别名（与查询字段一一对应）
+        param = "del_flag = 0",            //非必须 SQL附加条件（逻辑删除等）
+        ruleField = "userType",     //非必须  配置了ruleValues，没有配置ruleField 默认当前字段 userId
+        ruleValues = 1              //非必须 当前对象userType=1执行
 )
 @BusDb(
-    table = "sys_user1",               // 数据库表名
-    whereField = "user_id",                // 条件字段（外键）
-    selectField = {"username", "nick_name"}, // 查询字段
-    selectFieldAlias = {"userName", "realName"}, // 别名（与查询字段一一对应）
-    param = "del_flag = 0",            // SQL附加条件（逻辑删除等）
-	ruleField = "user_type",         //配置了ruleValues，没有配置ruleField 默认当前字段 userId
-	ruleValues = 2               //当前对象userType=2执行
+        table = "sys_user1",               // 数据库表名
+        whereField = "user_id",                // 条件字段（外键）
+        selectField = {"username", "nick_name"}, // 查询字段
+        selectFieldAlias = {"userName", "realName"}, // 别名（与查询字段一一对应）
+        param = "del_flag = 0",            // SQL附加条件（逻辑删除等）
+        ruleField = "user_type",         //配置了ruleValues，没有配置ruleField 默认当前字段 userId
+        ruleValues = 2               //当前对象userType=2执行
 )
 @BusDb(table = "sys_result",               // 数据库表名
-    whereField = "user_id",
-	selectField = "score")// selectFieldAlias不设置，默认名称：userId_sore
+        whereField = "user_id",
+        selectField = "score")// selectFieldAlias不设置，默认名称：userId_sore
 private Long userId;
 ```
 #### 注解属性：
@@ -131,10 +131,10 @@ private Integer sex;
 public enum StatusEnum implements EasyVoBusEnum {
     NORMAL(0, "正常"),
     DISABLE(1, "停用");
-    
+
     private final Integer code;
     private final String desc;
-    
+
     @Override
     public String getLabel() {
         return desc;
@@ -146,9 +146,9 @@ public enum StatusEnum implements EasyVoBusEnum {
     }
 }
 
-// 使用注解
-@BusEnum(StatusEnum.class)
-private Integer status;
+    // 使用注解
+    @BusEnum(StatusEnum.class)
+    private Integer status;
 ```
 #### 注解属性：
 | 属性  | 类型  | 说明  |
@@ -292,4 +292,128 @@ public class UserVO {
   "jobStatus": 0,
   "jobStatus_text": "在职"
 }
+```
+## 常见问题
+#### 1. 是否支持多值查询 / 关联？
+支持，支持英文逗号拼接的多值格式，可直接传入多个参数值实现批量关联 / 筛选，无需拆分多次请求。
+#### 2. 是否支持多级嵌套查询？
+支持多级嵌套查询，层级适配规则：
+第一层：支持 List、Map、项目路径下对象 三种数据结构
+第二层及后续层级：仅支持 项目下对象对象 和 List 集合
+#### 3. 是否支持一对多查询？
+支持一对多数据查询，但当前一对多结果会以逗号拼接合并返回，暂不支持已多条list格式返回。
+#### 4. 查询是每个字段数据查一次吗？
+不是，会先统一收集对象中所有带注解的查询需求，按查询表和查询条件分类聚合，相同表 + 相同条件仅执行一次查询，大幅减少数据库查询次数。
+#### 5. 是否支持自定义注解？
+支持，可通过自定义注解实现功能扩展，具体实现方式请查阅「自定义注解」文档。
+
+## 自定义注解文档
+#### 1.先定义一个注解  示例@BusUser
+```java
+
+@Repeatable(BusUser.Container.class)
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+@BusAnnotation
+public @interface BusUser {
+
+    /**
+     * 需要查询的字段
+     */
+
+    String[] selectField();
+
+    /**
+     * selectFiled映射字段
+     */
+    String[] selectFieldAlias() default {};
+
+
+    /**
+     * 执行本条注解的条件字段
+     */
+    String ruleField() default "";
+
+    /**
+     * 执行本条注解的条件值
+     */
+    String[] ruleValues() default {};
+  
+    @Target(ElementType.FIELD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @BusAnnotation
+    public @interface Container {
+        BusUser[] value();  // 必须叫 value，必须返回 Ferry 数组
+    }
+}
+```
+#### 2. 实现处理器BusHandler
+```java
+public interface BusHandler<T extends Annotation> {
+
+    /**
+     * 支持的注解类型
+     */
+    Class<T> supportAnnotation();
+
+    /**
+     * 获取展示字段名称
+     * @param fieldName
+     * @param annotation
+     * @return list 展示字段名
+     */
+    List<String> getDictFieldNames(String fieldName, Annotation annotation);
+
+    /**
+     * 批量收集数据
+     * @param context 上下文
+     * @param metadataList 需要查询的元数据列表
+     * @return Map<源值, Map<字段名, 字段值>> 示例：1，nickname->张三
+     */
+    Map<Object, Map<String, Object>> batchCollectData(BusContext context, List<FieldMetadata> metadataList);
+}
+
+
+@Component
+public class BusUserHandler implements BusHandler<BusUser> {
+
+
+    @Override
+    public Class<BusUser> supportAnnotation() {
+        return BusUser.class;
+    }
+
+    @Override
+    public List<String> getDictFieldNames(String fieldName, Annotation annotation) {
+        BusUser busDb = (BusUser) annotation;
+        String[] dictTexts = busDb.selectField();
+        String[] dictFieldNames = busDb.selectFieldAlias();
+        // 检查长度是否匹配
+        if (dictTexts.length != dictFieldNames.length) {
+            return ListUtils.list(dictTexts).stream()
+                    .map(text -> fieldName + "_" + StringUtils.toCamelCase(text))
+                    .collect(Collectors.toList());
+        }
+
+        return ListUtils.list(dictFieldNames);
+    }
+
+    @Override
+    public Map<Object, Map<String, Object>> batchCollectData(BusContext context, List<FieldMetadata> metadataList) {
+        Map<Object, Map<String, Object>> result = new HashMap<>();
+            // 批量查询
+            Map<Object, Map<String, Object>> tableResult = 自定义查询数据(metadataList);
+            for (Map.Entry<Object, Map<String, Object>> entry : tableResult.entrySet()) {
+                Object key = entry.getKey();
+                Map<String, Object> newInnerMap = entry.getValue();
+                if (result.containsKey(key)){
+                    Map<String, Object> existingInnerMap = result.get(key);
+                    existingInnerMap.putAll(newInnerMap);
+                }else {
+                    result.put(key,newInnerMap);
+                }
+            }
+        return result;
+		}
+	}
 ```
