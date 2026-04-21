@@ -3,10 +3,8 @@
 
 ## 简介
 EasyVoBus 是一款轻量级、易集成的关联字段自动填充框架，通过极简注解配置，即可根据字段值自动填充关联业务数据，支持数据库、字典、枚举、Map、RPC 远程服务五大数据源，专注解决 Controller 层接口响应数据的字段扩展、翻译、关联查询问题，大幅减少冗余代码开发。
-## 兼容性
-✅ 兼容：JDK 8+ ~ 21
-✅ 支持：Spring Boot 2.x / 3.x
-✅ 体积：轻量级，无多余依赖
+
+![JDK8-21](https://img.shields.io/badge/JDK-8%2B~21-blue "JDK8-21")  ![Spring Boot 2.x / 3.x](https://img.shields.io/badge/Spring%20Boot-2.x%20%7C%203.x-green "Spring Boot 2.x / 3.x")  ![license apache 2.0](https://img.shields.io/badge/License-Apache%202.0-red "license apache 2.0")  ![release](https://img.shields.io/badge/Release-1.1.0-brightgreen "release")
 
 ## 🔥 最佳实践（推荐）
 1. VO 层专用，不污染 DO 层
