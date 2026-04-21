@@ -110,13 +110,13 @@ public class EasyVoBusProperties {
      */
     private String defaultSuffix = "_text";
 
-    private Map<String, RpcProperties> rpc;
+    private Map<String, EasyVoBusRpcProperties> rpc;
 
-    public Map<String, RpcProperties> getRpc() {
+    public Map<String, EasyVoBusRpcProperties> getRpc() {
         return rpc;
     }
 
-    public void setRpc(Map<String, RpcProperties> rpc) {
+    public void setRpc(Map<String, EasyVoBusRpcProperties> rpc) {
         this.rpc = rpc;
     }
 

@@ -8,6 +8,7 @@ import com.github.duanyashu.easyvobus.model.FieldMetadata;
 import com.github.duanyashu.easyvobus.service.IEasyVoBusDbService;
 import com.github.duanyashu.easyvobus.utils.ListUtils;
 import com.github.duanyashu.easyvobus.utils.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -23,10 +24,9 @@ import java.util.stream.Collectors;
  * @author duanyashu
  *  2026/4/8 14:25
  */
-@Component
 public class BusDbHandler implements BusHandler<BusDb> {
 
-    @Resource
+    @Autowired
     IEasyVoBusDbService dbService;
 
     @Override

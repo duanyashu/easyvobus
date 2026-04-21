@@ -8,7 +8,7 @@ import java.util.List;
  * @author duanyashu
  * 2026/4/14 15:54
  */
-public class RpcProperties {
+public class EasyVoBusRpcProperties {
 
     private String serviceName;
 

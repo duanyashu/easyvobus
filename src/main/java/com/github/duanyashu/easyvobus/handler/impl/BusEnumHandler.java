@@ -8,6 +8,7 @@ import com.github.duanyashu.easyvobus.model.BusContext;
 import com.github.duanyashu.easyvobus.model.FieldMetadata;
 import com.github.duanyashu.easyvobus.utils.ListUtils;
 import com.github.duanyashu.easyvobus.utils.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Component;
 
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
  */
 @Component
 public class BusEnumHandler implements BusHandler<BusEnum> {
-    @Resource
+    @Autowired
     private EasyVoBusProperties easyVoBusProperties;
     @Override
     public Class<BusEnum> supportAnnotation() {

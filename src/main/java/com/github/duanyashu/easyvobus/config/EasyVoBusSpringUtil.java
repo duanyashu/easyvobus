@@ -1,8 +1,6 @@
 package com.github.duanyashu.easyvobus.config;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -23,14 +21,10 @@ import java.util.stream.Collectors;
  *
  * @author duanyashu
  */
-public final class SpringContextUtil implements BeanFactoryPostProcessor, ApplicationContextAware
+public class EasyVoBusSpringUtil implements  ApplicationContextAware
 {
-
-    /** Spring应用上下文环境 */
-    private static ConfigurableListableBeanFactory beanFactory;
-
     /** Spring应用上下文 */
-    public static ApplicationContext applicationContext;
+    private static ApplicationContext applicationContext;
 
     /**
      * 项目自身的 ComponentScan 包路径
@@ -40,15 +34,8 @@ public final class SpringContextUtil implements BeanFactoryPostProcessor, Applic
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
     {
-        SpringContextUtil.applicationContext = applicationContext;
+        EasyVoBusSpringUtil.applicationContext = applicationContext;
         componentScanPackages = getComponentScanPackages();
-    }
-
-
-    @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException
-    {
-        SpringContextUtil.beanFactory = beanFactory;
     }
 
     /**
@@ -61,7 +48,10 @@ public final class SpringContextUtil implements BeanFactoryPostProcessor, Applic
      */
     public static <T> T getBean(Class<T> clz) throws BeansException
     {
-        T result = (T) beanFactory.getBean(clz);
+        if (applicationContext == null) {
+            throw new IllegalStateException("Spring上下文未初始化");
+        }
+        T result = (T) applicationContext.getBean(clz);
         return result;
     }
 

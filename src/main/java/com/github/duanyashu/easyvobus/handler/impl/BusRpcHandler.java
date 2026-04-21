@@ -8,6 +8,7 @@ import com.github.duanyashu.easyvobus.model.FieldMetadata;
 import com.github.duanyashu.easyvobus.service.IEasyVoBusRpcService;
 import com.github.duanyashu.easyvobus.utils.ListUtils;
 import com.github.duanyashu.easyvobus.utils.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
  */
 @Component
 public class BusRpcHandler implements BusHandler<BusRpc> {
-    @Resource
+    @Autowired
     private Optional<IEasyVoBusRpcService> easyVoBusRpcService;
     @Override
     public Class<BusRpc> supportAnnotation() {

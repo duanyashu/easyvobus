@@ -1,6 +1,6 @@
 package com.github.duanyashu.easyvobus.utils.sql;
 
-import com.github.duanyashu.easyvobus.config.SpringContextUtil;
+import com.github.duanyashu.easyvobus.config.EasyVoBusSpringUtil;
 import com.github.duanyashu.easyvobus.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -21,7 +21,7 @@ import java.util.StringJoiner;
 public class SqlUtil {
 
     private static final Log log = LogFactory.getLog(SqlUtil.class);
-    private static JdbcTemplate JDBC_TEMPLATE = SpringContextUtil.getBean(JdbcTemplate.class);
+    private static JdbcTemplate JDBC_TEMPLATE = EasyVoBusSpringUtil.getBean(JdbcTemplate.class);
 
     /**
      * 根据值查询数据库表

@@ -6,7 +6,7 @@ import com.github.duanyashu.easyvobus.annotation.BusAnnotation;
 import com.github.duanyashu.easyvobus.annotation.BusRun;
 import com.github.duanyashu.easyvobus.annotation.BusStop;
 import com.github.duanyashu.easyvobus.config.EasyVoBusProperties;
-import com.github.duanyashu.easyvobus.config.SpringContextUtil;
+import com.github.duanyashu.easyvobus.config.EasyVoBusSpringUtil;
 import com.github.duanyashu.easyvobus.handler.BusHandler;
 import com.github.duanyashu.easyvobus.model.BusContext;
 import com.github.duanyashu.easyvobus.model.FieldMetadata;
@@ -14,6 +14,8 @@ import com.github.duanyashu.easyvobus.utils.ReflectUtils;
 import com.github.duanyashu.easyvobus.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -23,8 +25,6 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Field;
@@ -40,28 +40,27 @@ import java.util.stream.Collectors;
  * 2026/3/19 13:40
  */
 @ControllerAdvice
-public class VoBusAdvice implements ResponseBodyAdvice<Object> {
+public class VoBusAdvice implements ResponseBodyAdvice<Object>, InitializingBean {
 
     private static final Logger log = LoggerFactory.getLogger(VoBusAdvice.class);
 
     private static Map<Class<?>, BusHandler<?>> handlerMap;
 
-    @Resource
+    @Autowired
     List<BusHandler<?>> busHandlerList;
 
-    @Resource
+    @Autowired
     private ObjectMapper objectMapper;
 
-    @Resource
+    @Autowired
     private EasyVoBusProperties easyVoBusProperties;
 
     public VoBusAdvice() {
     }
-
-    @PostConstruct
-    public void init() {
+    @Override
+    public void afterPropertiesSet() {
         if (busHandlerList != null && !busHandlerList.isEmpty()) {
-            handlerMap = initHandleMap(busHandlerList);
+            handlerMap = busHandlerList.stream().collect(Collectors.toMap( BusHandler::supportAnnotation,Function.identity()));
         }
     }
     /**
@@ -81,9 +80,6 @@ public class VoBusAdvice implements ResponseBodyAdvice<Object> {
             return false;
         }
         return returnType.hasMethodAnnotation(BusRun.class) || returnType.getContainingClass().isAnnotationPresent(BusRun.class) || easyVoBusProperties.getEnableGlobal();
-    }
-    public Map<Class<?>, BusHandler<?>> initHandleMap(List<BusHandler<?>> handlers) {
-        return handlers.stream().collect(Collectors.toMap( BusHandler::supportAnnotation,Function.identity()));
     }
 
     /**
@@ -120,7 +116,34 @@ public class VoBusAdvice implements ResponseBodyAdvice<Object> {
             return enrichMapWithDictText(context, bodyMap);
         }
         handleObj(body, context);
-        return context.getResultMap();
+        // 检查当前对象是否包含任何 Bus 注解
+        if (hasAnyBusAnnotation(body.getClass())) {
+            return context.getResultMap();
+        } else {
+            return objectMapper.convertValue(context.getResultMap(), body.getClass());
+        }
+    }
+
+    /**
+     * 检查类或其任何字段是否包含 Bus 注解
+     *
+     * @param clazz 目标类
+     * @return 是否包含 Bus 注解
+     */
+    private boolean hasAnyBusAnnotation(Class<?> clazz) {
+        if (clazz == null) {
+            return false;
+        }
+        // 检查类的所有字段
+        Field[] fields = ReflectUtils.getFields(clazz);
+        for (Field field : fields) {
+            for (Annotation annotation : field.getDeclaredAnnotations()) {
+                if (annotation.annotationType().isAnnotationPresent(BusAnnotation.class)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void handleObj(Object body, BusContext context) {
@@ -175,7 +198,9 @@ public class VoBusAdvice implements ResponseBodyAdvice<Object> {
             List<FieldMetadata> metadataList = entry.getValue();
             BusHandler<?> handler = handlerMap.get(annotationType);
             if (handler != null) {
-                Map<Object, Map<String, Object>> data = handler.batchCollectData(context, metadataList);
+                // 添加类型安全转换
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                Map<Object, Map<String, Object>> data = (Map<Object, Map<String, Object>>)((BusHandler) handler).batchCollectData(context, metadataList);
                 allData.put(annotationType, data);
             }
         }
@@ -416,7 +441,9 @@ public class VoBusAdvice implements ResponseBodyAdvice<Object> {
             Method valueMethod = annoClass.getMethod("value");
             Class<?> returnType = valueMethod.getReturnType();
             if (returnType.isArray()&& Annotation.class.isAssignableFrom(returnType.getComponentType())) {
-                return returnType.getComponentType().asSubclass(Annotation.class);
+                @SuppressWarnings("unchecked")
+                Class<? extends Annotation> componentType = (Class<? extends Annotation>) returnType.getComponentType();
+                return componentType;
             }
         } catch (NoSuchMethodException e) {
             // 忽略，不是容器
@@ -483,13 +510,13 @@ public class VoBusAdvice implements ResponseBodyAdvice<Object> {
      * 是否项目对象
      */
     private boolean isProjectClass(Class<?> clz) {
-        Set<String> componentScanPackages = SpringContextUtil.componentScanPackages;
+        Set<String> componentScanPackages = EasyVoBusSpringUtil.componentScanPackages;
         List<String> voPackages = easyVoBusProperties.getVoPackages();
         if (!StringUtils.isEmpty(voPackages)){
             componentScanPackages.addAll(voPackages);
         }
         String name = clz.getName();
-        return componentScanPackages.stream().filter(scanPack -> name.startsWith(scanPack)).count() > 0 && !Enum.class.isAssignableFrom(clz) ;
+        return componentScanPackages.stream().anyMatch(name::startsWith) && !Enum.class.isAssignableFrom(clz) ;
     }
 
 }

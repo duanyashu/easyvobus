@@ -14,6 +14,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
@@ -29,67 +32,76 @@ import org.springframework.web.client.RestTemplate;
 public class EasyVoBusAutoConfiguration {
 
     @Bean
-    public DefultVoBusRpcController defultVoBusRpcController(){
-        return new DefultVoBusRpcController();
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    public EasyVoBusSpringUtil easyVoBusSpringUtil() {
+        return new EasyVoBusSpringUtil();
     }
-
 
     @Bean
     @ConditionalOnMissingBean(RestTemplate.class)
-    public RestTemplate restTemplate(){
+    public RestTemplate restTemplate() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        // 连接超时：3秒
         factory.setConnectTimeout(3000);
+        factory.setReadTimeout(30000); // 添加读取超时
         return new RestTemplate(factory);
     }
 
     @Bean
     @ConditionalOnBean(RestTemplate.class)
-    public DynamicRpcClientFactory dynamicFeignClientFactory(){
+    public DynamicRpcClientFactory dynamicFeignClientFactory() {
         return new DynamicRpcClientFactory();
     }
+
     @Bean
     @ConditionalOnBean(RestTemplate.class)
-    public IEasyVoBusRpcService feignVoBusRpcService(){
+    public IEasyVoBusRpcService feignVoBusRpcService() {
         return new RestTemplateRpcServiceImpl();
     }
 
     @Bean
     @ConditionalOnMissingBean(IEasyVoBusDbService.class)
-    public IEasyVoBusDbService easyVoBusDbService(){
+    public IEasyVoBusDbService easyVoBusDbService() {
         return new DefaultVoBusDbServiceImpl();
     }
 
     @Bean
+    @DependsOn("easyVoBusSpringUtil")
     public BusDbHandler busDbHandler() {
         return new BusDbHandler();
     }
+
     @Bean
+    @DependsOn("easyVoBusSpringUtil")
     public BusMapHandler busMapHandler() {
         return new BusMapHandler();
     }
+
     @Bean
+    @DependsOn("easyVoBusSpringUtil")
     public BusEnumHandler busEnumHandler() {
         return new BusEnumHandler();
     }
+
     @Bean
+    @DependsOn("easyVoBusSpringUtil")
     public BusDictHandler busDictHandler() {
         return new BusDictHandler();
     }
+
     @Bean
+    @DependsOn("easyVoBusSpringUtil")
     public BusRpcHandler busRpcHandler() {
         return new BusRpcHandler();
     }
 
     @Bean
-    @ConditionalOnMissingBean
-    public SpringContextUtil springContextUtil() {
-        return new SpringContextUtil();
-    }
-
-    @Bean
+    @DependsOn({"busDbHandler", "busMapHandler", "busEnumHandler", "busDictHandler", "busRpcHandler"})
     public VoBusAdvice ferryResponseAdvice() {
         return new VoBusAdvice();
     }
 
+    @Bean
+    public DefultVoBusRpcController defultVoBusRpcController() {
+        return new DefultVoBusRpcController();
+    }
 }

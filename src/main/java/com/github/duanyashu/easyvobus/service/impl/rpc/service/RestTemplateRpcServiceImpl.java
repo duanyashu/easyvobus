@@ -5,6 +5,7 @@ import com.github.duanyashu.easyvobus.service.IEasyVoBusRpcService;
 import com.github.duanyashu.easyvobus.service.impl.rpc.client.DynamicRpcClientFactory;
 import com.github.duanyashu.easyvobus.service.impl.rpc.client.RestClient;
 import com.github.duanyashu.easyvobus.utils.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ import java.util.Map;
  */
 public class RestTemplateRpcServiceImpl implements IEasyVoBusRpcService {
 
-    @Resource
+    @Autowired
     private DynamicRpcClientFactory clientFactory;
 
     @Override
